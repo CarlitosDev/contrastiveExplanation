@@ -1,5 +1,7 @@
 '''
 
+  Experiment #1 of the paper
+
   Linear surrogate model >> Analysis of the variable importance
   
   Generate a linear model where:
@@ -18,16 +20,7 @@
 
 
 '''
-  LaTeX:
-  ------
-    Polya's:
-    (1)  Understand the problem
-    (2)  Try to use experience from related problems to plan the attack
-    (3)  Carry out the attack
-    (4)  Ask yourself wether you really believe the answer you've got
 
-
-  Why?
   Analysis of the variable importance. 
   To generate contrastive explanations we rearrange the data into neighbours and reference. Therefore, the variable importance 
   calculated by the GBDT regressor is divided into parts. Asumming that data do not have date or time variables, the importance
@@ -35,8 +28,6 @@
 
   In this experiment we demonstrate that the method is able to accurately calculate the variable importance and moreover we
   can rearrange the importances as $\mathbf{v'}= \mathbf{v^{neig}} + \mathbf{v^{ref}}$ to facilitate interpretability.
-
-  How?
 
   To demonstrate this, let us generate a linear model with 5 independent variables drawn from drawn from a uniform distribution $\textit{U}(0,1)$ and 500 samples.
 
@@ -58,7 +49,6 @@
     \end{equation}
 
 '''
-
 
 
 import contrastiveRegressor.fcn_helpers as fhelp
@@ -224,7 +214,3 @@ print(df_all_cold_forecast)
 prefix = experiment_label + '_' + dt.datetime.today().strftime('%d_%m_%Y_%HH')
 xlsx_file_name = _p.join('results', prefix + '_table.xlsx')
 fhelp.to_excel_file(df_all_cold_forecast, xlsx_file_name)
-
-
-
-

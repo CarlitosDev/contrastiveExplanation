@@ -41,12 +41,7 @@ def generate_Gompertz_sales(num_samples,
   '''
 
   # 1 - Baseline sales
-  # Max value mu_sales + 3*sigma_sales
   baseline_sales = np.random.normal(mu_sales, sigma_sales, num_samples)
-  # 3xsigma covers 99.7 of the dist
-  # baseline_sales.min()
-  # baseline_sales.max()
-
 
 
   # 3 - Discount
@@ -67,7 +62,7 @@ def generate_Gompertz_sales(num_samples,
   # 4- Shelves
   # Easy-peasy: A curve to map the increment per shelf
   
-  # This is fixed up to a 12% gain. This value is then multiplied by the shel_impact
+  # This is fixed up to a 12% gain. This value is then multiplied by the shelf_impact
   max_gain = 0.12
   min_shelf_size = 0.0
   max_shelf_size = 25
@@ -75,17 +70,10 @@ def generate_Gompertz_sales(num_samples,
   # Randomly pick the capacities from the list
   shelves = np.random.choice(shelf_capacity, num_samples, replace=True)
   
-  #replenishments = np.divide(sales_driven_by_discount, shelves)
-  #shelf_dump_factor = shelf_impact/replenishments
-  #shelf_sales = np.divide(shelves, baseline_sales)*shelf_dump_factor
+  
   shelves_gain = shelf_impact*max_gain*(shelves-min_shelf_size) \
     / (max_shelf_size-min_shelf_size)
   shelf_sales = np.multiply(shelves_gain, sales_driven_by_discount)
-
-
-
-  # plt.scatter(discount, sales_driven_by_discount)
-  # plt.show(block = True)
 
   product_sales = sales_driven_by_discount + shelf_sales
 

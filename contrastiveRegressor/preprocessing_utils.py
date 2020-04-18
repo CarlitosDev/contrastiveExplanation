@@ -74,16 +74,6 @@ def percentageBasedCutOff(inputDF, colName, cutOff = 95.0):
     return inputDF.loc[idxCutOff, :], idxCutOff
 
 
-def column_transformation(df, columnNames, type_transformation='StandardScaler'):
-    prc = [];
-    exec('prc=preprocessing.{type_transformation}()')
-    print(prc)
-    for varName in columnNames:
-        x_prime = df[f'{varName}'].values.reshape(-1,1)
-        df[f'{varName}_{type_transformation}'] = prc.fit_transform(x_prime)
-
-    return df    
-
 def infer_variable_type(df):
     '''
         Infer the type of variable based on the type

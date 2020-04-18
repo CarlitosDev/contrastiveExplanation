@@ -13,13 +13,6 @@ class contrastiveRegressor(BaseEstimator, RegressorMixin):
 
     Docstring description for contrastiveRegressor
 
-   Attributes
-    ----------
-    says_str : str
-        a formatted string to print out what the animal says
-    num_legs : int
-        the number of legs the animal has (default 4)
-
     Methods
     -------
     fit(self, X, y)
