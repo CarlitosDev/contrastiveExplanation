@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 from os import path as _p
 import numpy as np
+import re
 
 from sklearn.model_selection import train_test_split
 from catboost import CatBoostRegressor
@@ -188,6 +189,8 @@ def prepareTableLaTeX(df_latex):
     \\end{table*}
     '''
     str_latex = df_latex.to_latex(index=False, float_format='{:3.2f}'.format)
+    # Remove the trailing whitespaces
+    str_latex = re.sub(r'(\s+)[\d|-]', ' ', str_latex)
     # replace the formulas
     str_latex = str_latex.replace('0.0', '')
     str_latex = str_latex.replace('y\_train', '''$\mathbf{y}$ (sales)''')
@@ -306,7 +309,8 @@ def frc_plain_CatBoost(num_neighbours, validation_test_size,
 
 
 def frc_AutoGluon(df_train, df_test, 
-    categoricalVars, responseVar = 'wk1_sales_all_stores'):
+    categoricalVars, experiment_label = 'grocery',
+    responseVar = 'wk1_sales_all_stores'):
     
     import autogluon as ag
     from autogluon import TabularPrediction as task
@@ -320,13 +324,18 @@ def frc_AutoGluon(df_train, df_test,
     test_data = task.Dataset(df=df_test)
 
     model = task.fit(train_data=train_data, 
-    output_directory="auto_gluon", label=responseVar,
+    output_directory="auto_gluon/" + experiment_label, label=responseVar,
     hyperparameter_tune=False)
 
 
     # Forecast with the best model
     autogluon_frc = model.predict(test_data)
-    return {'autoGluon_frc': autogluon_frc, 'autoGluon_model':model}
+    
+    # Forecast with all the models
+    individual_frc = {'AG_'+model_to_use: model.predict(test_data, model=model_to_use) \
+        for model_to_use in model.model_names}
+
+    return {'autoGluon_frc': autogluon_frc, 'autoGluon_model': model, 'individual_frc': individual_frc}
 
 def get_frc_errors(y, y_hat, verbose=True):
       '''
