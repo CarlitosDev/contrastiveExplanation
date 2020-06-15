@@ -1,9 +1,9 @@
 # Constrastive Explanations
 
+Repo for the paper "Cold-Start Promotional Sales Forecasting through Gradient Boosted-based Contrastive Explanations"
 
-## Examples
+## Experiments in the paper as notebooks
 
-The folder **examples** contains the files:
->paper_linear_surrogate_model.py 
+Experiment 1: contrastiveRegressor/Experiment_1_VarImportance.ipynb
 
-To run the contrastive model on a linear known model.
+Experiment 2: contrastiveRegressor/Experiment2_surrogate_sales.ipynb
