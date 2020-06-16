@@ -7,3 +7,7 @@ Repo for the paper "Cold-Start Promotional Sales Forecasting through Gradient Bo
 Experiment 1: contrastiveRegressor/Experiment_1_VarImportance.ipynb
 
 Experiment 2: contrastiveRegressor/Experiment2_surrogate_sales.ipynb
+
+
+## Benchmark against other methods on a public dataset
+Boston Housing: contrastiveRegressor/Benchmark_BostonHousing.ipynb
