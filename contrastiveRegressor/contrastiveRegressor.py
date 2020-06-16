@@ -7,18 +7,13 @@ from sklearn.model_selection import train_test_split
 from sklearn.utils.validation import check_is_fitted
 from sklearn.metrics import pairwise_distances, r2_score, explained_variance_score
 from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import ExtraTreesRegressor
+from ngboost import NGBRegressor
 
 class contrastiveRegressor(BaseEstimator, RegressorMixin):
   '''contrastiveRegressor class compatible with sklearn.
 
-    Docstring description for contrastiveRegressor
-
-   Attributes
-    ----------
-    says_str : str
-        a formatted string to print out what the animal says
-    num_legs : int
-        the number of legs the animal has (default 4)
+    Docstring description for contrastiveRegressor (TODO)
 
     Methods
     -------
@@ -29,6 +24,12 @@ class contrastiveRegressor(BaseEstimator, RegressorMixin):
     -------
     16.03.2020 - Euclidean distance as per the paper
     17.03.2020 - Symmetrical Euclidean W = Q.T Q
+    04.06.2020 - Add NGBoost as another base regressor
+
+
+    Contact
+    -------
+    carlos.aguilar.palacios@gmail.com
 
   '''
   # TODO: All estimators should specify all the
@@ -194,7 +195,13 @@ class contrastiveRegressor(BaseEstimator, RegressorMixin):
 
     print(f'Training set {M.shape}. Evaluation {M_eval.shape}...', end='')
 
-    self.regressor.fit(M, e, eval_set=self.eval_set, verbose=verbosity)
+    # The fit() method varies a bit depending on the regressor
+    if isinstance(self.regressor, ExtraTreesRegressor):
+      self.regressor.fit(M, e)
+    elif isinstance(self.regressor, NGBRegressor):
+      self.regressor.fit(M, e, X_val=M_eval, Y_val=e_eval)
+    else:
+      self.regressor.fit(M, e, eval_set=self.eval_set, verbose=verbosity)
     print('done.')
     self.is_fitted = True
 
@@ -205,6 +212,7 @@ class contrastiveRegressor(BaseEstimator, RegressorMixin):
 
 
   def get_feature_importance(self):
+    # If ngboost, take the feature importance for loc (mu) trees
     
     if self.is_fitted:
 
@@ -212,13 +220,15 @@ class contrastiveRegressor(BaseEstimator, RegressorMixin):
       int_vars = self.inputVars.copy()
       int_vars.extend(refVars)
       self.int_vars = int_vars
-
+      
       if isinstance(self.regressor, CatBoostRegressor):
         self.feat_importances = self.regressor.get_feature_importance()
+      elif isinstance(self.regressor, NGBRegressor):
+        self.feat_importances = getattr(self.regressor, self.feat_importance_keyword, None)[0]
       else:
         self.feat_importances = getattr(self.regressor, self.feat_importance_keyword, None) 
 
-    
+  
       self.x_weights = self.feat_importances[0:self.numFeatures]
       self.x_ref_weights = self.feat_importances[self.numFeatures::]
       self.x_combined_weights = self.x_weights + self.x_ref_weights
