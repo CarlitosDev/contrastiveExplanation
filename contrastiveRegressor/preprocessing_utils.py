@@ -1,3 +1,8 @@
+'''
+  Some preprocessing utils
+  
+  carlos.aguilar.palacios@gmail.com
+'''
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import LabelEncoder, scale

@@ -1,3 +1,8 @@
+'''
+  Helpers
+  carlos.aguilar.palacios@gmail.com
+'''
+
 import pandas as pd
 import os
 import pickle
@@ -11,10 +16,13 @@ import matplotlib
 from os import path as _p
 import numpy as np
 import re
-
+from sklearn.metrics import r2_score, explained_variance_score
 from sklearn.model_selection import train_test_split
 from catboost import CatBoostRegressor
-from sklearn.metrics import r2_score, explained_variance_score
+from sklearn.ensemble import ExtraTreesRegressor
+from ngboost import NGBRegressor
+
+
 
 
 def get_current_folder():
@@ -190,9 +198,10 @@ def prepareTableLaTeX(df_latex):
     '''
     str_latex = df_latex.to_latex(index=False, float_format='{:3.2f}'.format)
     # Remove the trailing whitespaces
-    str_latex = re.sub(r'(\s+)[\d|-]', ' ', str_latex)
+    #str_latex = re.sub(r'(\s+)[\d|-]', ' ', str_latex)
+    str_latex = " ".join(str_latex.split())
     # replace the formulas
-    str_latex = str_latex.replace('0.0', '')
+    #str_latex = str_latex.replace('0.0', '')
     str_latex = str_latex.replace('y\_train', '''$\mathbf{y}$ (sales)''')
     str_latex = str_latex.replace(
         'delta\_y\_train', '''$\mathbf{y_{\Delta}}$''')
@@ -314,6 +323,7 @@ def frc_AutoGluon(df_train, df_test,
     
     import autogluon as ag
     from autogluon import TabularPrediction as task
+    # autogluon.task.tabular_prediction.TabularPredictor
 
     for varName in categoricalVars:
         df_train[varName] = df_train[varName].astype(str)
@@ -359,7 +369,6 @@ def get_frc_errors(y, y_hat, verbose=True):
       r2 = r2_score(y, y_hat)
 
       d = {'MAE': MAE,
-      'MSE': MSE, 
       'RMSE': np.sqrt(MSE), 
       'meanError': meanError,
       'MAPE': MAPE,
@@ -368,8 +377,37 @@ def get_frc_errors(y, y_hat, verbose=True):
       'frc_bias': frc_bias,
       'frc_acc': frc_acc,
       'Var explained': var_explained}
+      #'MSE': MSE, 
       #,'residuals': e_t}
       if verbose:
         for k,v in d.items():
           print(f'{k}: {v:3.2f}')
       return d
+
+
+def frc_plain_ngboost(num_iterations, learning_rate, validation_test_size, X_train, y_train, X_test):
+
+    # ngboost
+    ngb_model = NGBRegressor(learning_rate=learning_rate, n_estimators=num_iterations)
+
+    # Split into training and evaluation
+    X_train_xgb, X_val_xgb, y_train_xgb, y_val_xgb = \
+        train_test_split(X_train, y_train, test_size=validation_test_size)
+
+    # Fit NGBoost
+    ngb_model.fit(X_train_xgb, y_train_xgb, X_val=X_val_xgb, Y_val=y_val_xgb)
+
+    # differences regarding the reference promotions
+    ngb_frc = ngb_model.predict(X_test)
+    return ngb_frc
+
+
+def frc_plain_extratrees(num_iterations, depth, validation_test_size, X_train, y_train, X_test):
+  # ExtraTrees
+  xtt_model = ExtraTreesRegressor(n_estimators=num_iterations, 
+  criterion='mse', max_depth=depth, n_jobs=-1)
+
+  xtt_model.fit(X_train, y_train)
+
+  xtt_frc = xtt_model.predict(X_test)
+  return xtt_frc

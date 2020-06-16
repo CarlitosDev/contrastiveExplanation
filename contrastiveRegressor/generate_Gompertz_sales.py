@@ -1,3 +1,8 @@
+'''
+  Generate sales for toy example (Experiment #2)
+  
+  carlos.aguilar.palacios@gmail.com
+'''
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
