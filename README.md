@@ -1,4 +1,4 @@
-# Constrastive Explanations
+# Contrastive Explanations
 
 Repo for the paper "Cold-Start Promotional Sales Forecasting through Gradient Boosted-based Contrastive Explanations", publicly available [here](https://ieeexplore.ieee.org/document/9149573)
 
