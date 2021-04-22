@@ -25,6 +25,8 @@ class contrastiveRegressor(BaseEstimator, RegressorMixin):
     16.03.2020 - Euclidean distance as per the paper
     17.03.2020 - Symmetrical Euclidean W = Q.T Q
     04.06.2020 - Add NGBoost as another base regressor
+    18.06.2020 - Training set selection can be randomised
+    22.04.2021 - Add a method to get the contrastive explanations from a forecast
 
 
     Contact
@@ -138,7 +140,16 @@ class contrastiveRegressor(BaseEstimator, RegressorMixin):
     currentPromo    = np.zeros(trainingSize, dtype=bool)
     remainingPromos = np.ones(trainingSize, dtype=bool)
 
-    for idx in range(0, trainingSize):
+    all_in_training = True
+    if all_in_training:
+      # All rows
+      idx_train_test = range(0, trainingSize)
+    else:
+      # Random
+      idx_train_test = np.random.randint(0, X_train_xgb.shape[0], \
+      size=round(X_train_xgb.shape[0]*1.5))
+
+    for idx in idx_train_test:
 
       currentPromo[idx]    = True
       remainingPromos[idx] = False
@@ -288,6 +299,7 @@ class contrastiveRegressor(BaseEstimator, RegressorMixin):
     y_delta_list = []
     y_idx_closest_promos = []
     y_distances_closest_promos = []
+    y_weights = []
     testSize = X_test.shape[0]
 
     for idx_test in range(0, testSize):
@@ -322,6 +334,7 @@ class contrastiveRegressor(BaseEstimator, RegressorMixin):
       y_k_list.append(y_k_hat)
       y_idx_closest_promos.append(idxSorted)
       y_distances_closest_promos.append(euclidean[idxSorted])
+      y_weights.append(w_distance)
 
     # Arrange the forecast as np-arrays
     y_hat = np.array(y_k_list)
@@ -335,6 +348,7 @@ class contrastiveRegressor(BaseEstimator, RegressorMixin):
     'y_delta_list': y_delta_list,
     'y_k_all_list': y_k_all_list,
     'y_distances_closest_promos': y_distances_closest_promos,
+    'y_weights': y_weights,
     'feat_importances': self.feat_importances,
     'internal_var_names': self.int_vars}
 
@@ -359,6 +373,9 @@ class contrastiveRegressor(BaseEstimator, RegressorMixin):
         df_feat_importances = pd.DataFrame(self.x_combined_weights[idx_importances], index=inputVars_plain)
     
     self.results['df_feat_importances'] = df_feat_importances
+
+    self.valid_predictions = True
+
     return y_hat_weighted
 
   def predict_eval_test(self):
@@ -371,6 +388,10 @@ class contrastiveRegressor(BaseEstimator, RegressorMixin):
 
   def arrange_regressor_results(self, idx_review, df_A_enc, y_train, id_train, inputVars_plain, \
     identifierVar, df_test_enc, y_test, num_inputVars):
+    '''
+      This is only for the results in the paper.
+      use get_contrastive_explanation() instead
+    '''
 
     dm_frc = self.results
 
@@ -407,6 +428,46 @@ class contrastiveRegressor(BaseEstimator, RegressorMixin):
     # Do not normalise
     # df_feature_importances = 100*df_feature_importances/df_feature_importances.sum()
     df_forecast_ext = df_forecast_ext.append(df_feature_importances.T, sort=False)
+
+    return df_forecast_ext
+
+
+  def get_contrastive_explanation(self, idx_review, X_test: 'DF', y_test: 'pd.Series'):
+    '''
+      Get the constrastive explanation as a dataframe for instance `idx_review` within 
+      the test set.
+      
+      Added on the 21.04.2021 as I realised it was hard to produce them otherwise.
+    '''
+    df_forecast_ext = pd.DataFrame.empty
+
+    if self.valid_predictions:
+      idx_closest_promos = self.results['y_idx_closest_promos'][idx_review]
+
+      df_feature_importances = self.results['df_feat_importances'].loc[self.inputVars]
+      df_feature_importances.columns=['var_importance']
+      df_feature_importances.sort_values(by='var_importance', ascending=False, inplace=True)
+
+      sorted_columns = df_feature_importances.index.tolist()
+
+      df_forecast = pd.DataFrame(self.X_train[idx_closest_promos], columns=self.inputVars)[sorted_columns]
+      df_forecast['y_train'] = self.y_train[idx_closest_promos]
+      df_forecast['delta_y_train'] = self.results['y_delta_list'][idx_review]
+      df_forecast['y_train_plus_delta'] = self.results['y_k_all_list'][idx_review]
+      df_forecast['y_train_distances'] = self.results['y_distances_closest_promos'][idx_review]
+      df_forecast['y_train_weights'] = self.results['y_weights'][idx_review]
+
+      df_forecast.index = [f'neighbour_{idx}' for idx in range(0, self.num_neighbours)]
+
+      df_target = X_test.iloc[idx_review][self.inputVars][sorted_columns]
+      df_target['y_actual'] = y_test[idx_review]
+      df_target['y_forecast'] = self.results['y_hat'][idx_review]
+      df_target['y_weighted_forecast'] = self.results['y_hat_weighted'][idx_review]
+      df_target.columns = f'y_test_{idx_review}'
+
+      df_feature_importances = self.results['df_feat_importances'].loc[sorted_columns]
+      df_feature_importances.columns=['var_importance']
+      df_forecast_ext = df_feature_importances.T.append(df_forecast.append(df_target, sort=False))
 
     return df_forecast_ext
 
